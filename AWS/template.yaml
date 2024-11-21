@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-01'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  # DynamoDB Tables
+  UserTokensTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: user-tokens
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  # API Gateway
+  AnimeLogApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+  # Lambda Functions
+  AuthLoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/auth/
+      Handler: login.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          CLIENT_ID: !Ref MalClientId
+          CLIENT_SECRET: !Ref MalClientSecret
+          REDIRECT_URI: !Ref RedirectUri
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /auth/login
+            Method: GET
+            RestApiId: !Ref AnimeLogApi
+
+  AuthCallbackFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/auth/
+      Handler: callback.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          CLIENT_ID: !Ref MalClientId
+          CLIENT_SECRET: !Ref MalClientSecret
+          REDIRECT_URI: !Ref RedirectUri
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /auth/callback
+            Method: GET
+            RestApiId: !Ref AnimeLogApi
+
+Parameters:
+  MalClientId:
+    Type: String
+    Description: MyAnimeList Client ID
+  MalClientSecret:
+    Type: String
+    Description: MyAnimeList Client Secret
+  RedirectUri:
+    Type: String
+    Description: OAuth redirect URI
+
+Outputs:
+  ApiURL:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${AnimeLogApi}.execute-api.${AWS::Region}.amazonaws.com/dev/"

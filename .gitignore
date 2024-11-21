@@ -1,0 +1,23 @@
+# Environment files
+.env
+AWS/.env
+AWS/.env.*
+!AWS/.env.example
+
+# AWS configs with secrets
+samconfig.toml
+!samconfig.template.toml
+
+# Local setup scripts with secrets
+AWS/scripts/setup-local.sh
+!AWS/scripts/setup-local.sh.template
+
+# Node
+node_modules/
+dist/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
